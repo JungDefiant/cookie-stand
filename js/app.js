@@ -1,351 +1,219 @@
 const hoursOpen = 14;
+var allLocations = [];
 
-// Location: Seattle
-var locationSeattle = {
-  locationName : 'Seattle',
-  minCustomers : 23,
-  maxCustomers : 65,
-  avgCookiePerSale : 6.3
-}
+// Location
+function Location(locationName, locationID, minCustomers, maxCustomers, avgCookiePerSale) {
+  // Properties
+  this.locationName = locationName;
+  this.locationID = locationID;
+  this.minCustomers = minCustomers;
+  this.maxCustomers = maxCustomers;
+  this.avgCookiePerSale = avgCookiePerSale;
+  this.totalCookiesSold = 0;
+  this.totalCookiesSoldByHour = [];
 
-// Seattle: Generate random customers function
-locationSeattle.generateRandCustomers = function() {
-  return Math.round(this.minCustomers + (Math.random() 
-    * Math.floor(this.maxCustomers - this.minCustomers)));
+  // Generate random customers function
+  this.generateRandCustomers = function () {
+    return Math.round(this.minCustomers + (Math.random()
+      * Math.floor(this.maxCustomers - this.minCustomers)));
+  };
+
+  // Generate array for number of cookies sold by hour
+  this.calculateTotalCookiesSoldByHour = function () {
+    var cookiesSoldThisHour;
+    var totalCookiesArray = [];
+
+    for (let i = 0; i < hoursOpen; i++) {
+      cookiesSoldThisHour = Math.round(this.generateRandCustomers() * this.avgCookiePerSale);
+      totalCookiesArray.push(cookiesSoldThisHour);
+    }
+
+    return totalCookiesArray;
+  };
+
+  // Generate total number of cookies sold in a day
+  this.calculateTotalCookiesSold = function (cookiesSoldArray) {
+    var total = 0;
+
+    for (let i = 0; i < cookiesSoldArray.length; i++) {
+      total += cookiesSoldArray[i];
+    }
+
+    return total;
+  };
+
+  // Populate arrays, then create and set HTML elements
+  this.render = function (tableToPopulate) {
+    this.totalCookiesSoldByHour = this.calculateTotalCookiesSoldByHour();
+    this.totalCookiesSold = this.calculateTotalCookiesSold(this.totalCookiesSoldByHour);
+
+    // TO CHANGE: Creates and adds its own rows, then populates with contents
+    var currentHour = 6;
+    var salesDataBody = document.getElementById('salesdata_Content');
+    var salesDataRow = document.createElement('tr');
+    var newElement, newTextNode;
+
+    newElement = document.createElement('th');
+    newTextNode = document.createTextNode(this.locationID);
+    newElement.appendChild(newTextNode);
+    salesDataRow.appendChild(newElement);
+
+    // Sets the first row of tr with times
+    for (let i = 0; i < hoursOpen; i++) {
+
+      newElement = document.createElement('td');
+      newTextNode = document.createTextNode(this.totalCookiesSoldByHour[i]);
+      newElement.appendChild(newTextNode);
+      salesDataRow.appendChild(newElement);
+
+      currentHour++;
+    }
+
+    newElement = document.createElement('td');
+    newTextNode = document.createTextNode(this.totalCookiesSold);
+    newElement.appendChild(newTextNode);
+    salesDataRow.appendChild(newElement);
+
+    salesDataBody.appendChild(salesDataRow);
+  };
 };
 
-// Seattle: Generate array for number of cookies sold by hour
-locationSeattle.calculateTotalCookiesSoldByHour = function() {
-  var cookiesSoldThisHour;
-  var totalCookiesArray = [];
-
-  for(let i = 0; i < hoursOpen; i++) {
-    cookiesSoldThisHour = Math.round(locationSeattle.generateRandCustomers() * locationSeattle.avgCookiePerSale);
-    totalCookiesArray.push(cookiesSoldThisHour);
+// allLocations
+allLocations.deleteAllRows = function() {
+  var salesDataBodyChildNodes = document.getElementById('salesdata_Content');
+  console.log("BEFORE: " + salesDataBodyChildNodes);
+  
+  while(salesDataBodyChildNodes.firstChild){
+    salesDataBodyChildNodes.removeChild(salesDataBodyChildNodes.firstChild);
   }
 
-  return totalCookiesArray;
-};
+  console.log("AFTER: " + salesDataBodyChildNodes);
+}
 
-// Seattle: Generate total number of cookies sold in a day
-locationSeattle.calculateTotalCookiesSold = function(cookiesSoldArray) {
+allLocations.renderAllLocations = function() {
+  this.deleteAllRows();
+
+  
+  for(var i = 0; i < this.length; i++) {
+    this[i].render();
+  }
+}
+
+allLocations.push(new Location('seattle', 'Seattle', 23, 65, 6.3));
+allLocations.push(new Location('tokyo', 'Tokyo', 3, 24, 1.2));
+allLocations.push(new Location('dubai', 'Dubai', 11, 38, 3.7));
+allLocations.push(new Location('paris', 'Paris', 20, 38, 2.3));
+allLocations.push(new Location('lima', 'Lima', 2, 16, 4.6));
+
+
+// SALES DATA ROW: HEADER
+var salesDataHeaderRow = document.getElementById('salesdata_headerRow');
+
+salesDataHeaderRow.render = (function () {
+  salesDataHeaderRow.appendChild(document.createElement('th'));
+
+  var currentHour = 6;
+  var newThElement, newTextNode, hourText;
+
+  for (let i = 0; i < hoursOpen; i++) {
+    if (currentHour > 11) {
+      if (currentHour === 12) hourText = '12pm';
+      else hourText = (currentHour - 12) + 'pm';
+    }
+    else hourText = currentHour + 'am';
+
+    newThElement = document.createElement('th');
+    newTextNode = document.createTextNode(hourText);
+    newThElement.appendChild(newTextNode);
+    salesDataHeaderRow.appendChild(newThElement);
+
+    currentHour++;
+  }
+
+  newThElement = document.createElement('th');
+  newTextNode = document.createTextNode('Daily Location Total');
+  newThElement.appendChild(newTextNode);
+  salesDataHeaderRow.appendChild(newThElement);
+
+})();
+
+// SALES DATA ROW: TOTALS
+var salesDataTotalRow = document.getElementById('salesdata_Total');
+
+salesDataTotalRow.addAllHourTotals = function (locationArray, hourIndex) {
   var total = 0;
 
-  for(let i = 0; i < cookiesSoldArray.length; i++) {
-    total += cookiesSoldArray[i];
+  for(let i = 0; i < locationArray.length; i++) {
+    total += locationArray[i].totalCookiesSoldByHour[hourIndex];
   }
 
   return total;
 };
 
-// Seattle: Call functions for populating list values
-locationSeattle.totalCookiesSoldByHour = locationSeattle.calculateTotalCookiesSoldByHour();
-locationSeattle.totalCookiesSold = locationSeattle.calculateTotalCookiesSold(locationSeattle.totalCookiesSoldByHour);
+salesDataTotalRow.render = function () {
+  var currentHour = 6;
+  var totalCookiesOverall = 0;
+  var salesDataRow = document.getElementById('salesdata_Total');
+  var newElement, newTextNode, totalCookiesThisHour;
 
-// Seattle: Get and set HTML elements
-var hoursList = document.getElementById('salesdata_list_Seattle');
-var currentHour = 6;
-
-var newLiElement, newTextNode, hourText;
-
-for(let i = 0; i < hoursOpen; i++) {
-  if(currentHour > 11) {
-    if(currentHour === 12) hourText = '12pm: ' + locationSeattle.totalCookiesSoldByHour[i];
-    else hourText = (currentHour - 12) + 'pm: ' + locationSeattle.totalCookiesSoldByHour[i];
+  // Removes all child elements
+  while(salesDataRow.firstChild) {
+    salesDataRow.removeChild(salesDataRow.firstChild);
   }
-  else hourText = currentHour + 'am: ' + locationSeattle.totalCookiesSoldByHour[i];
 
-  newLiElement = document.createElement('li');
-  newTextNode = document.createTextNode(hourText);
-  newLiElement.appendChild(newTextNode);
-  hoursList.appendChild(newLiElement);
+  // Adds header node
+  newElement = document.createElement('th');
+  newTextNode = document.createTextNode('Total');
+  newElement.appendChild(newTextNode);
+  salesDataRow.appendChild(newElement);
 
-  currentHour++;
-}
+  // Sets the first row of tr with times
+  for (let i = 0; i < hoursOpen; i++) {
+    totalCookiesThisHour = salesDataTotalRow.addAllHourTotals(allLocations, i);
+    totalCookiesOverall += totalCookiesThisHour;
 
-hourText = 'Total: ' + locationSeattle.totalCookiesSold;
+    newElement = document.createElement('td');
+    newTextNode = document.createTextNode(totalCookiesThisHour);
+    newElement.appendChild(newTextNode);
+    salesDataRow.appendChild(newElement);
 
-newLiElement = document.createElement('li');
-newTextNode = document.createTextNode(hourText);
-newLiElement.appendChild(newTextNode);
-hoursList.appendChild(newLiElement);
+    currentHour++;
+  }
 
-// =============================================================================================
-
-// Location: Tokyo
-var locationTokyo = {
-  locationName : 'Tokyo',
-  minCustomers : 3,
-  maxCustomers : 24,
-  avgCookiePerSale : 1.2
-}
-
-// Tokyo: Generate random customers function
-locationTokyo.generateRandCustomers = function() {
-  return Math.round(this.minCustomers + (Math.random() 
-    * Math.floor(this.maxCustomers - this.minCustomers)));
+  newElement = document.createElement('td');
+  newTextNode = document.createTextNode(totalCookiesOverall);
+  newElement.appendChild(newTextNode);
+  salesDataRow.appendChild(newElement);
 };
 
-// Tokyo: Generate array for number of cookies sold by hour
-locationTokyo.calculateTotalCookiesSoldByHour = function() {
-  var cookiesSoldThisHour;
-  var totalCookiesArray = [];
+// FORM: EVENT FUNCTIONS
+var addLocationForm = document.getElementById('addNewLocation');
 
-  for(let i = 0; i < hoursOpen; i++) {
-    cookiesSoldThisHour = Math.round(locationTokyo.generateRandCustomers() * locationTokyo.avgCookiePerSale);
-    totalCookiesArray.push(cookiesSoldThisHour);
+addLocationForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  var newLocationID = e.target.locationName.value.toLowerCase();
+  var newLocationName = e.target.locationName.value;
+  var newMinCust = parseInt(e.target.minCust.value);
+  var newMaxCust = parseInt(e.target.maxCust.value);
+  var newAvgCookiesPerSale = parseFloat(e.target.avgCookiesPerSale.value);
+
+  if(newMinCust > newMaxCust) {
+    alert('Minimum customers are greater than maximum customers! Enter different values.');
+  } else {
+    // addLocationForm.setCustomValidity('');
+    
+    var newLocation = new Location(newLocationID, newLocationName, newMinCust, newMaxCust, newAvgCookiesPerSale);
+
+    allLocations.push(newLocation);
+    allLocations.renderAllLocations();
+    salesDataTotalRow.render();
   }
+});
 
-  return totalCookiesArray;
-};
+// addEventListener('submit', function(e) {})
+// e.preventDefault()
 
-// Tokyo: Generate total number of cookies sold in a day
-locationTokyo.calculateTotalCookiesSold = function(cookiesSoldArray) {
-  var total = 0;
-
-  for(let i = 0; i < cookiesSoldArray.length; i++) {
-    total += cookiesSoldArray[i];
-  }
-
-  return total;
-};
-
-// Tokyo: Call functions for populating list values
-locationTokyo.totalCookiesSoldByHour = locationTokyo.calculateTotalCookiesSoldByHour();
-locationTokyo.totalCookiesSold = locationTokyo.calculateTotalCookiesSold(locationTokyo.totalCookiesSoldByHour);
-
-// Tokyo: Get and set HTML elements
-hoursList = document.getElementById('salesdata_list_Tokyo');
-currentHour = 6;
-
-for(let i = 0; i < hoursOpen; i++) {
-  if(currentHour > 11) {
-    if(currentHour === 12) hourText = '12pm: ' + locationTokyo.totalCookiesSoldByHour[i];
-    else hourText = (currentHour - 12) + 'pm: ' + locationTokyo.totalCookiesSoldByHour[i];
-  }
-  else hourText = currentHour + 'am: ' + locationTokyo.totalCookiesSoldByHour[i];
-
-  newLiElement = document.createElement('li');
-  newTextNode = document.createTextNode(hourText);
-  newLiElement.appendChild(newTextNode);
-  hoursList.appendChild(newLiElement);
-
-  currentHour++;
-}
-
-hourText = 'Total: ' + locationTokyo.totalCookiesSold;
-
-newLiElement = document.createElement('li');
-newTextNode = document.createTextNode(hourText);
-newLiElement.appendChild(newTextNode);
-hoursList.appendChild(newLiElement);
-
-// =============================================================================================
-
-// Location: Dubai
-var locationDubai = {
-  locationName : 'Dubai',
-  minCustomers : 11,
-  maxCustomers : 38,
-  avgCookiePerSale : 3.7
-}
-
-// Dubai: Generate random customers function
-locationDubai.generateRandCustomers = function() {
-  return Math.round(this.minCustomers + (Math.random() 
-    * Math.floor(this.maxCustomers - this.minCustomers)));
-};
-
-// Dubai: Generate array for number of cookies sold by hour
-locationDubai.calculateTotalCookiesSoldByHour = function() {
-  var cookiesSoldThisHour;
-  var totalCookiesArray = [];
-
-  for(let i = 0; i < hoursOpen; i++) {
-    cookiesSoldThisHour = Math.round(locationDubai.generateRandCustomers() * locationDubai.avgCookiePerSale);
-    totalCookiesArray.push(cookiesSoldThisHour);
-  }
-
-  return totalCookiesArray;
-};
-
-// Dubai: Generate total number of cookies sold in a day
-locationDubai.calculateTotalCookiesSold = function(cookiesSoldArray) {
-  var total = 0;
-
-  for(let i = 0; i < cookiesSoldArray.length; i++) {
-    total += cookiesSoldArray[i];
-  }
-
-  return total;
-};
-
-// Dubai: Call functions for populating list values
-locationDubai.totalCookiesSoldByHour = locationDubai.calculateTotalCookiesSoldByHour();
-locationDubai.totalCookiesSold = locationDubai.calculateTotalCookiesSold(locationDubai.totalCookiesSoldByHour);
-
-// Dubai: Get and set HTML elements
-hoursList = document.getElementById('salesdata_list_Dubai');
-currentHour = 6;
-
-for(let i = 0; i < hoursOpen; i++) {
-  if(currentHour > 11) {
-    if(currentHour === 12) hourText = '12pm: ' + locationDubai.totalCookiesSoldByHour[i];
-    else hourText = (currentHour - 12) + 'pm: ' + locationDubai.totalCookiesSoldByHour[i];
-  }
-  else hourText = currentHour + 'am: ' + locationDubai.totalCookiesSoldByHour[i];
-
-  newLiElement = document.createElement('li');
-  newTextNode = document.createTextNode(hourText);
-  newLiElement.appendChild(newTextNode);
-  hoursList.appendChild(newLiElement);
-
-  currentHour++;
-}
-
-hourText = 'Total: ' + locationDubai.totalCookiesSold;
-
-newLiElement = document.createElement('li');
-newTextNode = document.createTextNode(hourText);
-newLiElement.appendChild(newTextNode);
-hoursList.appendChild(newLiElement);
-
-// =============================================================================================
-
-// Location: Paris
-var locationParis = {
-  locationName : 'Paris',
-  minCustomers : 20,
-  maxCustomers : 38,
-  avgCookiePerSale : 2.3
-}
-
-// Paris: Generate random customers function
-locationParis.generateRandCustomers = function() {
-  return Math.round(this.minCustomers + (Math.random() 
-    * Math.floor(this.maxCustomers - this.minCustomers)));
-};
-
-// Paris: Generate array for number of cookies sold by hour
-locationParis.calculateTotalCookiesSoldByHour = function() {
-  var cookiesSoldThisHour;
-  var totalCookiesArray = [];
-
-  for(let i = 0; i < hoursOpen; i++) {
-    cookiesSoldThisHour = Math.round(locationParis.generateRandCustomers() * locationParis.avgCookiePerSale);
-    totalCookiesArray.push(cookiesSoldThisHour);
-  }
-
-  return totalCookiesArray;
-};
-
-// Paris: Generate total number of cookies sold in a day
-locationParis.calculateTotalCookiesSold = function(cookiesSoldArray) {
-  var total = 0;
-
-  for(let i = 0; i < cookiesSoldArray.length; i++) {
-    total += cookiesSoldArray[i];
-  }
-
-  return total;
-};
-
-// Paris: Call functions for populating list values
-locationParis.totalCookiesSoldByHour = locationParis.calculateTotalCookiesSoldByHour();
-locationParis.totalCookiesSold = locationParis.calculateTotalCookiesSold(locationParis.totalCookiesSoldByHour);
-
-// Paris: Get and set HTML elements
-hoursList = document.getElementById('salesdata_list_Paris');
-currentHour = 6;
-
-for(let i = 0; i < hoursOpen; i++) {
-  if(currentHour > 11) {
-    if(currentHour === 12) hourText = '12pm: ' + locationParis.totalCookiesSoldByHour[i];
-    else hourText = (currentHour - 12) + 'pm: ' + locationParis.totalCookiesSoldByHour[i];
-  }
-  else hourText = currentHour + 'am: ' + locationParis.totalCookiesSoldByHour[i];
-
-  newLiElement = document.createElement('li');
-  newTextNode = document.createTextNode(hourText);
-  newLiElement.appendChild(newTextNode);
-  hoursList.appendChild(newLiElement);
-
-  currentHour++;
-}
-
-hourText = 'Total: ' + locationParis.totalCookiesSold;
-
-newLiElement = document.createElement('li');
-newTextNode = document.createTextNode(hourText);
-newLiElement.appendChild(newTextNode);
-hoursList.appendChild(newLiElement);
-
-// =============================================================================================
-
-// Location: Lima
-var locationLima = {
-  locationName : 'Paris',
-  minCustomers : 20,
-  maxCustomers : 38,
-  avgCookiePerSale : 2.3
-}
-
-// Lima: Generate random customers function
-locationLima.generateRandCustomers = function() {
-  return Math.round(this.minCustomers + (Math.random() 
-    * Math.floor(this.maxCustomers - this.minCustomers)));
-};
-
-// Lima: Generate array for number of cookies sold by hour
-locationLima.calculateTotalCookiesSoldByHour = function() {
-  var cookiesSoldThisHour;
-  var totalCookiesArray = [];
-
-  for(let i = 0; i < hoursOpen; i++) {
-    cookiesSoldThisHour = Math.round(locationLima.generateRandCustomers() * locationLima.avgCookiePerSale);
-    totalCookiesArray.push(cookiesSoldThisHour);
-  }
-
-  return totalCookiesArray;
-};
-
-// Lima: Generate total number of cookies sold in a day
-locationLima.calculateTotalCookiesSold = function(cookiesSoldArray) {
-  var total = 0;
-
-  for(let i = 0; i < cookiesSoldArray.length; i++) {
-    total += cookiesSoldArray[i];
-  }
-
-  return total;
-};
-
-// Lima: Call functions for populating list values
-locationLima.totalCookiesSoldByHour = locationLima.calculateTotalCookiesSoldByHour();
-locationLima.totalCookiesSold = locationLima.calculateTotalCookiesSold(locationLima.totalCookiesSoldByHour);
-
-// Lima: Get and set HTML elements
-hoursList = document.getElementById('salesdata_list_Lima');
-currentHour = 6;
-
-for(let i = 0; i < hoursOpen; i++) {
-  if(currentHour > 11) {
-    if(currentHour === 12) hourText = '12pm: ' + locationLima.totalCookiesSoldByHour[i];
-    else hourText = (currentHour - 12) + 'pm: ' + locationLima.totalCookiesSoldByHour[i];
-  }
-  else hourText = currentHour + 'am: ' + locationLima.totalCookiesSoldByHour[i];
-
-  newLiElement = document.createElement('li');
-  newTextNode = document.createTextNode(hourText);
-  newLiElement.appendChild(newTextNode);
-  hoursList.appendChild(newLiElement);
-
-  currentHour++;
-}
-
-hourText = 'Total: ' + locationLima.totalCookiesSold;
-
-newLiElement = document.createElement('li');
-newTextNode = document.createTextNode(hourText);
-newLiElement.appendChild(newTextNode);
-hoursList.appendChild(newLiElement);
+// Render functions called
+allLocations.renderAllLocations();
+salesDataTotalRow.render();
