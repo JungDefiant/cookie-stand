@@ -1,4 +1,5 @@
 const hoursOpen = 14;
+var allLocations = [];
 
 // Location
 function Location(locationName, locationID, minCustomers, maxCustomers, avgCookiePerSale) {
@@ -46,8 +47,10 @@ function Location(locationName, locationID, minCustomers, maxCustomers, avgCooki
     this.totalCookiesSoldByHour = this.calculateTotalCookiesSoldByHour();
     this.totalCookiesSold = this.calculateTotalCookiesSold(this.totalCookiesSoldByHour);
 
+    // TO CHANGE: Creates and adds its own rows, then populates with contents
     var currentHour = 6;
-    var salesDataRow = document.getElementById('salesdata_' + this.locationID);
+    var salesDataBody = document.getElementById('salesdata_Content');
+    var salesDataRow = document.createElement('tr');
     var newElement, newTextNode;
 
     newElement = document.createElement('th');
@@ -71,15 +74,39 @@ function Location(locationName, locationID, minCustomers, maxCustomers, avgCooki
     newElement.appendChild(newTextNode);
     salesDataRow.appendChild(newElement);
 
+    salesDataBody.appendChild(salesDataRow);
   };
 };
 
-var locationSeattle = new Location('seattle', 'Seattle', 23, 65, 6.3);
-var locationTokyo = new Location('tokyo', 'Tokyo', 3, 24, 1.2);
-var locationDubai = new Location('dubai', 'Dubai', 11, 38, 3.7);
-var locationParis = new Location('paris', 'Paris', 20, 38, 2.3);
-var locationLima = new Location('lima', 'Lima', 2, 16, 4.6);
+// allLocations
+allLocations.deleteAllRows = function() {
+  var salesDataBodyChildNodes = document.getElementById('salesdata_Content');
+  console.log("BEFORE: " + salesDataBodyChildNodes);
+  
+  while(salesDataBodyChildNodes.firstChild){
+    salesDataBodyChildNodes.removeChild(salesDataBodyChildNodes.firstChild);
+  }
 
+  console.log("AFTER: " + salesDataBodyChildNodes);
+}
+
+allLocations.renderAllLocations = function() {
+  this.deleteAllRows();
+
+  
+  for(var i = 0; i < this.length; i++) {
+    this[i].render();
+  }
+}
+
+allLocations.push(new Location('seattle', 'Seattle', 23, 65, 6.3));
+allLocations.push(new Location('tokyo', 'Tokyo', 3, 24, 1.2));
+allLocations.push(new Location('dubai', 'Dubai', 11, 38, 3.7));
+allLocations.push(new Location('paris', 'Paris', 20, 38, 2.3));
+allLocations.push(new Location('lima', 'Lima', 2, 16, 4.6));
+
+
+// SALES DATA ROW: HEADER
 var salesDataHeaderRow = document.getElementById('salesdata_headerRow');
 
 salesDataHeaderRow.render = (function () {
@@ -110,13 +137,7 @@ salesDataHeaderRow.render = (function () {
 
 })();
 
-
-locationSeattle.render();
-locationTokyo.render();
-locationDubai.render();
-locationParis.render();
-locationLima.render();
-
+// SALES DATA ROW: TOTALS
 var salesDataTotalRow = document.getElementById('salesdata_Total');
 
 salesDataTotalRow.addAllHourTotals = function (locationArray, hourIndex) {
@@ -129,13 +150,18 @@ salesDataTotalRow.addAllHourTotals = function (locationArray, hourIndex) {
   return total;
 };
 
-salesDataTotalRow.render = (function () {
+salesDataTotalRow.render = function () {
   var currentHour = 6;
   var totalCookiesOverall = 0;
   var salesDataRow = document.getElementById('salesdata_Total');
-  var allLocations = [locationSeattle, locationTokyo, locationDubai, locationParis, locationLima];
   var newElement, newTextNode, totalCookiesThisHour;
 
+  // Removes all child elements
+  while(salesDataRow.firstChild) {
+    salesDataRow.removeChild(salesDataRow.firstChild);
+  }
+
+  // Adds header node
   newElement = document.createElement('th');
   newTextNode = document.createTextNode('Total');
   newElement.appendChild(newTextNode);
@@ -158,4 +184,36 @@ salesDataTotalRow.render = (function () {
   newTextNode = document.createTextNode(totalCookiesOverall);
   newElement.appendChild(newTextNode);
   salesDataRow.appendChild(newElement);
-})();
+};
+
+// FORM: EVENT FUNCTIONS
+var addLocationForm = document.getElementById('addNewLocation');
+
+addLocationForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  var newLocationID = e.target.locationName.value.toLowerCase();
+  var newLocationName = e.target.locationName.value;
+  var newMinCust = parseInt(e.target.minCust.value);
+  var newMaxCust = parseInt(e.target.maxCust.value);
+  var newAvgCookiesPerSale = parseFloat(e.target.avgCookiesPerSale.value);
+
+  if(newMinCust > newMaxCust) {
+    alert('Minimum customers are greater than maximum customers! Enter different values.');
+  } else {
+    // addLocationForm.setCustomValidity('');
+    
+    var newLocation = new Location(newLocationID, newLocationName, newMinCust, newMaxCust, newAvgCookiesPerSale);
+
+    allLocations.push(newLocation);
+    allLocations.renderAllLocations();
+    salesDataTotalRow.render();
+  }
+});
+
+// addEventListener('submit', function(e) {})
+// e.preventDefault()
+
+// Render functions called
+allLocations.renderAllLocations();
+salesDataTotalRow.render();
